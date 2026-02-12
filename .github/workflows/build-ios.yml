@@ -24,7 +24,7 @@ jobs:
         run: ./scripts/package-xcframework.sh
 
       - name: Archive XCFramework
-        run: zip -r libdatachannel.xcframework.zip libdatachannel.xcframework
+        run: cd build && zip -r ../libdatachannel.xcframework.zip libdatachannel.xcframework
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
