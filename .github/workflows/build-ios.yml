@@ -1,0 +1,39 @@
+name: Build iOS XCFramework
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build mbedTLS
+        run: ./scripts/build-mbedtls-ios.sh
+
+      - name: Build libdatachannel
+        run: ./scripts/build-libdatachannel-ios.sh
+
+      - name: Package XCFramework
+        run: ./scripts/package-xcframework.sh
+
+      - name: Archive XCFramework
+        run: zip -r libdatachannel.xcframework.zip libdatachannel.xcframework
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: libdatachannel-ios
+          path: libdatachannel.xcframework.zip
+
+      - name: Create release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: libdatachannel.xcframework.zip
