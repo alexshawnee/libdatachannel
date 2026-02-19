@@ -10,7 +10,7 @@ MACOS_DEPLOYMENT_TARGET="${MACOS_DEPLOYMENT_TARGET:-11.0}"
 
 build_mbedtls() {
     local arch=$1
-    local system_name=$2
+    local system_name=$2  # iOS or empty (native macOS)
     local sysroot=$3
     local deployment_target=$4
     local label=$5
@@ -31,12 +31,12 @@ build_mbedtls() {
 }
 
 # --- iOS ---
-build_mbedtls arm64  iOS Darwin "" "$IOS_DEPLOYMENT_TARGET" ios
-build_mbedtls arm64  iOS iphonesimulator "$IOS_DEPLOYMENT_TARGET" sim-arm64
-build_mbedtls x86_64 iOS iphonesimulator "$IOS_DEPLOYMENT_TARGET" sim-x64
+build_mbedtls arm64  iOS ""               "$IOS_DEPLOYMENT_TARGET" ios
+build_mbedtls arm64  iOS iphonesimulator  "$IOS_DEPLOYMENT_TARGET" sim-arm64
+build_mbedtls x86_64 iOS iphonesimulator  "$IOS_DEPLOYMENT_TARGET" sim-x64
 
 # --- macOS ---
-build_mbedtls arm64  Darwin "" "$MACOS_DEPLOYMENT_TARGET" macos-arm64
-build_mbedtls x86_64 Darwin "" "$MACOS_DEPLOYMENT_TARGET" macos-x64
+build_mbedtls arm64  "" "" "$MACOS_DEPLOYMENT_TARGET" macos-arm64
+build_mbedtls x86_64 "" "" "$MACOS_DEPLOYMENT_TARGET" macos-x64
 
 echo "=== mbedTLS done ==="

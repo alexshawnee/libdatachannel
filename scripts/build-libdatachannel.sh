@@ -18,7 +18,7 @@ build_datachannel() {
     echo "=== Building libdatachannel — $label ($arch) ==="
 
     cmake -B "$BUILD_ROOT/datachannel-$label" -S "$ROOT_DIR" \
-        -DCMAKE_SYSTEM_NAME="$system_name" \
+        ${system_name:+-DCMAKE_SYSTEM_NAME=$system_name} \
         -DCMAKE_OSX_ARCHITECTURES="$arch" \
         -DCMAKE_OSX_DEPLOYMENT_TARGET="$deployment_target" \
         ${sysroot:+-DCMAKE_OSX_SYSROOT=$sysroot} \
@@ -41,7 +41,7 @@ build_datachannel arm64  iOS iphonesimulator  "$IOS_DEPLOYMENT_TARGET" sim-arm64
 build_datachannel x86_64 iOS iphonesimulator  "$IOS_DEPLOYMENT_TARGET" sim-x64
 
 # --- macOS ---
-build_datachannel arm64  Darwin "" "$MACOS_DEPLOYMENT_TARGET" macos-arm64
-build_datachannel x86_64 Darwin "" "$MACOS_DEPLOYMENT_TARGET" macos-x64
+build_datachannel arm64  "" "" "$MACOS_DEPLOYMENT_TARGET" macos-arm64
+build_datachannel x86_64 "" "" "$MACOS_DEPLOYMENT_TARGET" macos-x64
 
 echo "=== libdatachannel done ==="
