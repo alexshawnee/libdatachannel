@@ -5,19 +5,22 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 BUILD_ROOT="${BUILD_ROOT:-$ROOT_DIR/build}"
 JOBS=$(sysctl -n hw.ncpu 2>/dev/null || echo 4)
-DEPLOYMENT_TARGET="${IOS_DEPLOYMENT_TARGET:-13.0}"
+IOS_DEPLOYMENT_TARGET="${IOS_DEPLOYMENT_TARGET:-13.0}"
+MACOS_DEPLOYMENT_TARGET="${MACOS_DEPLOYMENT_TARGET:-11.0}"
 
 build_mbedtls() {
     local arch=$1
-    local sysroot=$2
-    local label=$3
+    local system_name=$2
+    local sysroot=$3
+    local deployment_target=$4
+    local label=$5
 
     echo "=== Building mbedTLS — $label ($arch) ==="
 
     cmake -S "$ROOT_DIR/deps/mbedtls" -B "$BUILD_ROOT/mbedtls-$label" \
-        -DCMAKE_SYSTEM_NAME=iOS \
+        -DCMAKE_SYSTEM_NAME="$system_name" \
         -DCMAKE_OSX_ARCHITECTURES="$arch" \
-        -DCMAKE_OSX_DEPLOYMENT_TARGET="$DEPLOYMENT_TARGET" \
+        -DCMAKE_OSX_DEPLOYMENT_TARGET="$deployment_target" \
         ${sysroot:+-DCMAKE_OSX_SYSROOT=$sysroot} \
         -DENABLE_TESTING=OFF \
         -DENABLE_PROGRAMS=OFF \
@@ -27,8 +30,13 @@ build_mbedtls() {
     cmake --install "$BUILD_ROOT/mbedtls-$label" --prefix "$BUILD_ROOT/mbedtls-install-$label"
 }
 
-build_mbedtls arm64 ""                ios
-build_mbedtls arm64 iphonesimulator   sim-arm64
-build_mbedtls x86_64 iphonesimulator  sim-x64
+# --- iOS ---
+build_mbedtls arm64  iOS Darwin "" "$IOS_DEPLOYMENT_TARGET" ios
+build_mbedtls arm64  iOS iphonesimulator "$IOS_DEPLOYMENT_TARGET" sim-arm64
+build_mbedtls x86_64 iOS iphonesimulator "$IOS_DEPLOYMENT_TARGET" sim-x64
+
+# --- macOS ---
+build_mbedtls arm64  Darwin "" "$MACOS_DEPLOYMENT_TARGET" macos-arm64
+build_mbedtls x86_64 Darwin "" "$MACOS_DEPLOYMENT_TARGET" macos-x64
 
 echo "=== mbedTLS done ==="

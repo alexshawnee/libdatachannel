@@ -1,8 +1,8 @@
-name: Build iOS XCFramework
+name: Build XCFramework (iOS + macOS)
 
 on:
   push:
-    tags: ['v*']
+    tags: ['v*-darwin']
   workflow_dispatch:
 
 jobs:
@@ -15,10 +15,10 @@ jobs:
           submodules: recursive
 
       - name: Build mbedTLS
-        run: ./scripts/build-mbedtls-ios.sh
+        run: ./scripts/build-mbedtls.sh
 
       - name: Build libdatachannel
-        run: ./scripts/build-libdatachannel-ios.sh
+        run: ./scripts/build-libdatachannel.sh
 
       - name: Package XCFramework
         run: ./scripts/package-xcframework.sh
@@ -29,7 +29,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: libdatachannel-ios
+          name: libdatachannel-xcframework
           path: libdatachannel.xcframework.zip
 
       - name: Create release

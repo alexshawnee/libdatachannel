@@ -21,15 +21,28 @@ merge_libs() {
         "$BUILD_ROOT/mbedtls-install-$label/lib/libmbedx509.a"
 }
 
+# --- iOS ---
 merge_libs ios        "$BUILD_ROOT/libdatachannel-ios-arm64.a"
 merge_libs sim-arm64  "$BUILD_ROOT/libdatachannel-sim-arm64.a"
 merge_libs sim-x64    "$BUILD_ROOT/libdatachannel-sim-x64.a"
 
-echo "=== Creating fat simulator binary ==="
+# --- macOS ---
+merge_libs macos-arm64 "$BUILD_ROOT/libdatachannel-macos-arm64.a"
+merge_libs macos-x64   "$BUILD_ROOT/libdatachannel-macos-x64.a"
+
+echo "=== Creating fat binaries ==="
+
+# iOS simulator: arm64 + x86_64
 lipo -create \
     "$BUILD_ROOT/libdatachannel-sim-arm64.a" \
     "$BUILD_ROOT/libdatachannel-sim-x64.a" \
     -output "$BUILD_ROOT/libdatachannel-sim.a"
+
+# macOS: arm64 + x86_64
+lipo -create \
+    "$BUILD_ROOT/libdatachannel-macos-arm64.a" \
+    "$BUILD_ROOT/libdatachannel-macos-x64.a" \
+    -output "$BUILD_ROOT/libdatachannel-macos.a"
 
 echo "=== Preparing headers ==="
 HEADERS_DIR="$BUILD_ROOT/headers"
@@ -48,7 +61,8 @@ echo "=== Creating XCFramework ==="
 rm -rf "$OUTPUT_DIR/libdatachannel.xcframework"
 xcodebuild -create-xcframework \
     -library "$BUILD_ROOT/libdatachannel-ios-arm64.a" -headers "$HEADERS_DIR" \
-    -library "$BUILD_ROOT/libdatachannel-sim.a" -headers "$HEADERS_DIR" \
+    -library "$BUILD_ROOT/libdatachannel-sim.a"       -headers "$HEADERS_DIR" \
+    -library "$BUILD_ROOT/libdatachannel-macos.a"     -headers "$HEADERS_DIR" \
     -output "$OUTPUT_DIR/libdatachannel.xcframework"
 
 echo "=== Done: $OUTPUT_DIR/libdatachannel.xcframework ==="
