@@ -44,25 +44,42 @@ lipo -create \
     "$BUILD_ROOT/libdatachannel-macos-x64.a" \
     -output "$BUILD_ROOT/libdatachannel-macos.a"
 
+# Rename to uniform libdatachannel.a so xcframework slices are consistent
+STAGE="$BUILD_ROOT/stage"
+rm -rf "$STAGE"
+for src in "$BUILD_ROOT/libdatachannel-ios-arm64.a" \
+           "$BUILD_ROOT/libdatachannel-sim.a" \
+           "$BUILD_ROOT/libdatachannel-macos.a"; do
+    name=$(basename "$src" .a)
+    mkdir -p "$STAGE/$name"
+    cp "$src" "$STAGE/$name/libdatachannel.a"
+done
+
 echo "=== Preparing headers ==="
 HEADERS_DIR="$BUILD_ROOT/headers"
 rm -rf "$HEADERS_DIR"
 mkdir -p "$HEADERS_DIR"
 cp "$ROOT_DIR/include/rtc/rtc.h" "$HEADERS_DIR/"
 cp "$ROOT_DIR/include/rtc/version.h" "$HEADERS_DIR/"
-cat > "$HEADERS_DIR/module.modulemap" <<'EOF'
-module libdatachannel {
-    header "rtc.h"
-    export *
-}
-EOF
 
 echo "=== Creating XCFramework ==="
 rm -rf "$OUTPUT_DIR/libdatachannel.xcframework"
 xcodebuild -create-xcframework \
-    -library "$BUILD_ROOT/libdatachannel-ios-arm64.a" -headers "$HEADERS_DIR" \
-    -library "$BUILD_ROOT/libdatachannel-sim.a"       -headers "$HEADERS_DIR" \
-    -library "$BUILD_ROOT/libdatachannel-macos.a"     -headers "$HEADERS_DIR" \
+    -library "$STAGE/libdatachannel-ios-arm64/libdatachannel.a" -headers "$HEADERS_DIR" \
+    -library "$STAGE/libdatachannel-sim/libdatachannel.a"       -headers "$HEADERS_DIR" \
+    -library "$STAGE/libdatachannel-macos/libdatachannel.a"     -headers "$HEADERS_DIR" \
     -output "$OUTPUT_DIR/libdatachannel.xcframework"
+
+# Add module.modulemap to each slice
+for slice in "$OUTPUT_DIR/libdatachannel.xcframework"/*/; do
+    [ -d "$slice/Headers" ] || continue
+    mkdir -p "$slice/Modules"
+    cat > "$slice/Modules/module.modulemap" <<'EOF'
+module libdatachannel {
+    header "../Headers/rtc.h"
+    export *
+}
+EOF
+done
 
 echo "=== Done: $OUTPUT_DIR/libdatachannel.xcframework ==="
