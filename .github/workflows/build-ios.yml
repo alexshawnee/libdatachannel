@@ -26,6 +26,21 @@ jobs:
       - name: Archive XCFramework
         run: cd build && zip -r ../libdatachannel.xcframework.zip libdatachannel.xcframework
 
+      - name: Package KMP libraries
+        run: ./scripts/package-kmp.sh
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Publish KMP to S3
+        run: cd kmp && ./gradlew publish
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:

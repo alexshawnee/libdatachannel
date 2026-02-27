@@ -1,0 +1,3 @@
+package = libdatachannel
+headers = rtc.h
+staticLibraries = libdatachannel.a
