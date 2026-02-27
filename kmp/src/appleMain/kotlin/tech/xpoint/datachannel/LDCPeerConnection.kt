@@ -40,20 +40,10 @@ import libdatachannel.rtcSetRemoteDescription
 import libdatachannel.rtcSetUserPointer
 
 class LDCPeerConnection(
-    private val iceServers: List<String> = DEFAULT_ICE_SERVERS,
-    debug: Boolean = false
+    private val iceServers: List<String> = DEFAULT_ICE_SERVERS
 ) : PeerConnection {
 
     init {
-        if (debug) {
-            rtcInitLogger(
-                RTC_LOG_DEBUG,
-                staticCFunction { _: UInt, message: CPointer<ByteVar>? ->
-                    message?.toKString()?.let { println("[libdc] $it") }
-                    Unit
-                }
-            )
-        }
         rtcPreload()
     }
 
@@ -68,6 +58,16 @@ class LDCPeerConnection(
             "stun:stun.l.google.com:19302",
             "stun:stun1.l.google.com:19302"
         )
+
+        fun enableLogging() {
+            rtcInitLogger(
+                RTC_LOG_DEBUG,
+                staticCFunction { _: UInt, message: CPointer<ByteVar>? ->
+                    message?.toKString()?.let { println("[libdc] $it") }
+                    Unit
+                }
+            )
+        }
 
         fun cleanup() {
             rtcCleanup()
@@ -118,14 +118,12 @@ class LDCPeerConnection(
     private var pc: Int = -1
     private var dc: Int = -1
     private val state = State()
-    private var stableRef: StableRef<State>? = null
+    private val stableRef = StableRef.create(state)
 
     override val incoming: Channel<DCMessage> get() = state.incoming
 
-    private fun createPeerConnection(): StableRef<State> {
+    private fun createPeerConnection() {
         require(pc < 0) { "PeerConnection already created, use a new LDCPeerConnection instance" }
-        val ref = StableRef.create(state)
-        stableRef = ref
 
         memScoped {
             val cStrings = iceServers.map { it.cstr.ptr }
@@ -136,18 +134,17 @@ class LDCPeerConnection(
         }
         check(pc, "rtcCreatePeerConnection")
 
-        rtcSetUserPointer(pc, ref.asCPointer())
+        rtcSetUserPointer(pc, stableRef.asCPointer())
         rtcSetGatheringStateChangeCallback(pc, onGathering)
-        return ref
     }
 
     override suspend fun offer(label: String): String {
-        val ref = createPeerConnection()
+        createPeerConnection()
 
         dc = rtcCreateDataChannel(pc, label)
         check(dc, "rtcCreateDataChannel")
 
-        rtcSetUserPointer(dc, ref.asCPointer())
+        rtcSetUserPointer(dc, stableRef.asCPointer())
         rtcSetOpenCallback(dc, onOpen)
         rtcSetMessageCallback(dc, onMessage)
         rtcSetClosedCallback(dc, onClosed)
@@ -195,7 +192,6 @@ class LDCPeerConnection(
             rtcClosePeerConnection(pc)
             rtcDeletePeerConnection(pc)
         }
-        stableRef?.dispose()
-        stableRef = null
+        stableRef.dispose()
     }
 }
