@@ -10,6 +10,11 @@ sealed class DCMessage {
     class Binary(val data: ByteArray) : DCMessage()
 }
 
+data class Configuration(
+    val iceServers: List<String> = emptyList(),
+    val bindAddress: String? = null,
+)
+
 /**
  * A single-use WebRTC peer connection with a data channel.
  *

@@ -40,7 +40,7 @@ import libdatachannel.rtcSetRemoteDescription
 import libdatachannel.rtcSetUserPointer
 
 class LDCPeerConnection(
-    private val iceServers: List<String> = DEFAULT_ICE_SERVERS
+    private val config: Configuration = Configuration()
 ) : PeerConnection {
 
     init {
@@ -54,11 +54,6 @@ class LDCPeerConnection(
     )
 
     companion object {
-        val DEFAULT_ICE_SERVERS = listOf(
-            "stun:stun.l.google.com:19302",
-            "stun:stun1.l.google.com:19302"
-        )
-
         fun enableLogging() {
             rtcInitLogger(
                 RTC_LOG_DEBUG,
@@ -126,11 +121,12 @@ class LDCPeerConnection(
         require(pc < 0) { "PeerConnection already created, use a new LDCPeerConnection instance" }
 
         memScoped {
-            val cStrings = iceServers.map { it.cstr.ptr }
-            val config = alloc<rtcConfiguration>()
-            config.iceServers = allocArrayOf(*cStrings.toTypedArray())
-            config.iceServersCount = iceServers.size
-            pc = rtcCreatePeerConnection(config.ptr)
+            val cStrings = config.iceServers.map { it.cstr.ptr }
+            val rtcConfig = alloc<rtcConfiguration>()
+            rtcConfig.iceServers = allocArrayOf(*cStrings.toTypedArray())
+            rtcConfig.iceServersCount = config.iceServers.size
+            config.bindAddress?.let { rtcConfig.bindAddress = it.cstr.ptr }
+            pc = rtcCreatePeerConnection(rtcConfig.ptr)
         }
         check(pc, "rtcCreatePeerConnection")
 
