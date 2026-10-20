@@ -27,6 +27,7 @@ import libdatachannel.rtcCreatePeerConnection
 import libdatachannel.rtcDelete
 import libdatachannel.rtcDeletePeerConnection
 import libdatachannel.rtcGetLocalDescription
+import libdatachannel.rtcGetRemoteAddress
 import libdatachannel.rtcInitLogger
 import libdatachannel.rtcPreload
 import libdatachannel.rtcSendMessage
@@ -103,6 +104,8 @@ class LDCPeerConnection(
             Unit
         }
 
+        private const val ADDRESS_BUFFER_SIZE = 128
+
         private fun check(result: Int, op: String) {
             if (result < RTC_ERR_SUCCESS) {
                 error("$op failed with error code $result")
@@ -176,6 +179,16 @@ class LDCPeerConnection(
 
     override fun send(data: String) {
         check(rtcSendMessage(dc, data, -1), "rtcSendMessage")
+    }
+
+    override fun remoteAddress(): String? {
+        if (pc < 0) return null
+        memScoped {
+            val buf = allocArray<ByteVar>(ADDRESS_BUFFER_SIZE)
+            if (rtcGetRemoteAddress(pc, buf, ADDRESS_BUFFER_SIZE) < 0) return null
+            // "host:port"; IPv6 hosts are not bracketed
+            return buf.toKString().substringBeforeLast(':')
+        }
     }
 
     override fun close() {
