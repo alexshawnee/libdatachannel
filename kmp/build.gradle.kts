@@ -8,7 +8,7 @@ repositories {
 }
 
 group = "tech.xpoint"
-version = "0.24.1"
+version = "0.24.2"
 
 val kmpLibsDir = rootProject.layout.projectDirectory.dir("../build/kmp-libs")
 val headersDir = rootProject.layout.projectDirectory.dir("../include/rtc")

@@ -90,4 +90,11 @@ interface PeerConnection : AutoCloseable {
      * @throws IllegalStateException if the data channel is not open or on send failure
      */
     fun send(data: String)
+
+    /**
+     * IP address of the remote peer on the selected ICE candidate pair, without the port.
+     *
+     * @return the address, or null if no pair is selected yet
+     */
+    fun remoteAddress(): String?
 }
